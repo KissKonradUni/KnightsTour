@@ -179,6 +179,12 @@ class Table
             {
                 for (int y = 0; y < _tableSize.Y; y++)
                 {
+                    if (float.IsNaN(_priorityMap[x, y]))
+                    {
+                        _priorityMap[x, y] = 1;
+                        return;
+                    }
+                    
                     // Increase priority of high priority cells' neighbours.
                     if (copyTable[x, y] < Constants.NeighbourToWholeThreshold)
                         continue;
@@ -202,7 +208,7 @@ class Table
     public Position? GetMostDesireableStep()
     {
         Position? best = null;
-        float bestPrio = 0.0f;
+        float bestPrio = -1.0f;
 
         foreach (var move in Constants.PossibleMoves)
         {
@@ -244,12 +250,12 @@ public class Program
                 Console.SetCursorPosition(x * 2, y);
                 
                 if (table.PlayerPosition.X != x || table.PlayerPosition.Y != y)
-                    Console.Write($"{(table.TravelMap[x, y] ? "X" : "-")}|");
+                    Console.Write($"\x1b[0m{(table.TravelMap[x, y] ? "\x1b[38;5;203mX" : "\x1b[38;5;4m-")}\x1b[38;5;255m|");
                 else
-                    Console.Write("%|");
+                    Console.Write("\x1b[38;5;50m%\x1b[38;5;255m|");
                 
                 Console.SetCursorPosition(table.TableSize.X * 2 + 2 + x * 3, y);
-                Console.Write($"{table.StepMap[x,y].ToString().PadLeft(2, '0')}|");
+                Console.Write($"\x1b[38;5;3m{table.StepMap[x,y].ToString().PadLeft(2, '0')}\x1b[38;5;255m|");
                 
                 Console.SetCursorPosition(table.TableSize.X * 5 + 4 + x * 5, y);
                 if (table.PlayerPosition.X != x || table.PlayerPosition.Y != y)
@@ -283,6 +289,7 @@ public class Program
             {
                 Console.WriteLine("\nStuck or Done.");
                 Console.ReadLine();
+                return 0;
             }
         } while (true);
     }
