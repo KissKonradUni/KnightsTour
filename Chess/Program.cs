@@ -268,7 +268,7 @@ public class Program
         do
         {
             if (table.IsDone())
-                Console.WriteLine("DONE WTF");
+                Console.WriteLine("DONE");
             
             UpdateConsole(table);
 
