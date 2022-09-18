@@ -3,17 +3,17 @@
 static class Constants
 {
     public static readonly Position[] PossibleMoves = {
-        new(-2,  1),
-        new(-1,  2),
-        new( 1, -2),
-        new( 2, -1),
-        new(-2, -1),
+        new(-2,  1),  // * *
+        new(-1,  2),  //*   *
+        new( 1, -2),  //  x  
+        new( 2, -1),  //*   *
+        new(-2, -1),  // * * 
         new(-1, -2),
         new( 1,  2),
         new( 2,  1),
     };
 
-    public static readonly float DistanceToValueWeight     = 0.5f;
+    public static readonly float ValueToDistanceWeight     = 0.5f;
     
     public static readonly float NeighbourToWholeWeight    = 0.80f;
     public static readonly float NeighbourToWholeThreshold = 0.95f;
@@ -142,11 +142,11 @@ class Table
                     continue;
                 }
                 
-                var valuePriority= 1.0f - ((float)_stepMap[x, y] - minimum) / maximum;
+                var valuePriority = 1.0f - ((float)_stepMap[x, y] - minimum) / maximum;
                 var distancePriority = 1.0f - (new Position(x, y) | _playerPosition) / _maxDistance;
 
                 // Lerp
-                var weightedPriority = valuePriority + (distancePriority - valuePriority) * Constants.DistanceToValueWeight;
+                var weightedPriority = valuePriority + (distancePriority - valuePriority) * Constants.ValueToDistanceWeight;
 
                 if (weightedPriority < minPrio)
                     minPrio = weightedPriority;
@@ -176,7 +176,7 @@ class Table
                 throw new NullReferenceException("Copied array was somehow null.");
             
             for (int x = 0; x < _tableSize.X; x++)
-            {
+            { 
                 for (int y = 0; y < _tableSize.Y; y++)
                 {
                     if (float.IsNaN(_priorityMap[x, y]))
@@ -233,7 +233,7 @@ class Table
 
     public bool IsStuck()
     {
-        return _stepMap.Cast<int>().Max() == 0;
+        return !(_stepMap.Cast<int>().Max() == 0);
     }
 }
 
@@ -245,7 +245,7 @@ public class Program
         
         for (int x = 0; x < table.TableSize.X; x++)
         {
-            for (int y = 0; y < table.TableSize.X; y++)
+            for (int y = 0; y < table.TableSize.Y; y++)
             {
                 Console.SetCursorPosition(x * 2, y);
                 
@@ -269,7 +269,7 @@ public class Program
     
     public static int Main(string[] args)
     {
-        Table table = new Table(new Position(8, 8), new Position(3, 3));
+        Table table = new Table(new Position(8, 8), new Position(1, 1));
 
         do
         {
@@ -287,7 +287,11 @@ public class Program
             }
             else
             {
-                Console.WriteLine("\nStuck or Done.");
+                if (table.IsStuck())
+                    Console.WriteLine("Stuck!");
+                else
+                    Console.WriteLine("Done!");
+
                 Console.ReadLine();
                 return 0;
             }
