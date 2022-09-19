@@ -291,8 +291,11 @@ public static class Program
     private static void UpdateConsole(Table table)
     {
         Console.Clear();
-        
+
         Console.WriteLine($"{_runCount}. Try");
+        
+        if (_hidden)
+            return;
         
         for (var x = 0; x < table.TableSize.X; x++)
         {
@@ -325,7 +328,7 @@ public static class Program
     private static Position _lastStep = new(0,0);
     
     private static int _runCount = 1;
-    private static bool _hidden = false;
+    private static bool _hidden;
     
     private static readonly List<Table> History = new();
     private static readonly List<Position> StepHistory = new();
@@ -357,7 +360,8 @@ public static class Program
         {
             UpdateConsole(_table);
 
-            Console.ReadLine();
+            if (!_hidden)
+                Console.ReadLine();
 
             var next = _table.GetMostDesirableStep();
             if (next != null)
@@ -368,7 +372,8 @@ public static class Program
                 {
                     RevertStep();
                     Console.WriteLine("Very stuck, sorry!");
-                    Console.ReadLine();
+                    if (!_hidden)
+                        Console.ReadLine();
                     var thisStep = _table.PlayerPosition.Copy();
                     _table = History[0];
                     _runCount++;
@@ -393,7 +398,8 @@ public static class Program
                 if (_table.IsStuck())
                 {   
                     Console.WriteLine("Stuck!");
-                    Console.ReadLine();
+                    if (!_hidden)
+                        Console.ReadLine();
 
                     RevertStep();
                 }
