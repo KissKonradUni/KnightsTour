@@ -1,6 +1,6 @@
 ﻿namespace Chess;
 
-static class Constants
+internal static class Constants
 {
     public static readonly Position[] PossibleMoves = {
         new(-2,  1),  // * *
@@ -13,22 +13,22 @@ static class Constants
         new( 2,  1),
     };
 
-    public static readonly float ValueToDistanceWeight     = 0.5f;
-    
-    public static readonly float NeighbourToWholeWeight    = 0.80f;
-    public static readonly float NeighbourToWholeThreshold = 0.95f;
-    public static readonly int   NeighbourToWholeCycles    = 2;
+    public const float ValueToDistanceWeight     = 0.50f;
+
+    public const float NeighbourToWholeWeight    = 0.80f;
+    public const float NeighbourToWholeThreshold = 0.95f;
+    public const int   NeighbourToWholeCycles    = 2;
 }
 
 internal class Position
 {
-    public int X;
-    public int Y;
+    public readonly int X;
+    public readonly int Y;
 
     public Position(int x, int y)
     {
-        this.X = x;
-        this.Y = y;
+        X = x;
+        Y = y;
     }
 
     // Add
@@ -51,9 +51,9 @@ internal class Position
 
 class Table
 {
-    private bool[,]  _travelMap;
-    private int[,]   _stepMap;
-    private float[,] _priorityMap;
+    private readonly bool[,]  _travelMap;
+    private readonly int[,]   _stepMap;
+    private readonly float[,] _priorityMap;
 
     private Position _playerPosition;
     private readonly Position _tableSize;
@@ -97,7 +97,7 @@ class Table
         );
     }
 
-    public void UpdateMaps()
+    private void UpdateMaps()
     {
         _travelMap[_playerPosition.X, _playerPosition.Y] = true;
         GenerateStepMap();
@@ -106,9 +106,9 @@ class Table
     
     private void GenerateStepMap()
     {
-        for (int x = 0; x < _tableSize.X; x++)
+        for (var x = 0; x < _tableSize.X; x++)
         {
-            for (int y = 0; y < _tableSize.Y; y++)
+            for (var y = 0; y < _tableSize.Y; y++)
             {
                 _stepMap[x, y] = 0;
                 foreach (var move in Constants.PossibleMoves)
@@ -129,12 +129,12 @@ class Table
         var minimum = flattened.Min();
         var maximum = flattened.Max();
 
-        var minPrio = 1.0f;
-        var maxPrio = 0.0f;
+        var minPriority = 1.0f;
+        var maxPriority = 0.0f;
 
-        for (int x = 0; x < _tableSize.X; x++)
+        for (var x = 0; x < _tableSize.X; x++)
         {
-            for (int y = 0; y < _tableSize.Y; y++)
+            for (var y = 0; y < _tableSize.Y; y++)
             {
                 if (_travelMap[x, y])
                 {
@@ -148,36 +148,36 @@ class Table
                 // Lerp
                 var weightedPriority = valuePriority + (distancePriority - valuePriority) * Constants.ValueToDistanceWeight;
 
-                if (weightedPriority < minPrio)
-                    minPrio = weightedPriority;
-                if (weightedPriority > maxPrio)
-                    maxPrio = weightedPriority;
+                if (weightedPriority < minPriority)
+                    minPriority = weightedPriority;
+                if (weightedPriority > maxPriority)
+                    maxPriority = weightedPriority;
                 
                 _priorityMap[x, y] = weightedPriority;
             }
         }
 
-        for (int x = 0; x < _tableSize.X; x++)
+        for (var x = 0; x < _tableSize.X; x++)
         {
-            for (int y = 0; y < _tableSize.Y; y++)
+            for (var y = 0; y < _tableSize.Y; y++)
             {
                 if (_travelMap[x, y])
                     continue;
 
-                _priorityMap[x, y] -= minPrio;
-                _priorityMap[x, y] /= maxPrio - minPrio;
+                _priorityMap[x, y] -= minPriority;
+                _priorityMap[x, y] /= maxPriority - minPriority;
             }
         }
 
-        for (int i = 0; i < Constants.NeighbourToWholeCycles; i++)
+        for (var i = 0; i < Constants.NeighbourToWholeCycles; i++)
         {
             var copyTable = _priorityMap.Clone() as float[,];
             if (copyTable == null)
                 throw new NullReferenceException("Copied array was somehow null.");
             
-            for (int x = 0; x < _tableSize.X; x++)
+            for (var x = 0; x < _tableSize.X; x++)
             { 
-                for (int y = 0; y < _tableSize.Y; y++)
+                for (var y = 0; y < _tableSize.Y; y++)
                 {
                     if (float.IsNaN(_priorityMap[x, y]))
                     {
@@ -193,34 +193,31 @@ class Table
                     {
                         var newPos = new Position(x, y) + move;
 
-                        if (CanMoveThere(newPos))
-                        {
-                            var a = copyTable[newPos.X, newPos.Y];
-
-                            _priorityMap[newPos.X, newPos.Y] = a + (1.0f - a) * Constants.NeighbourToWholeWeight;
-                        }
+                        if (!CanMoveThere(newPos)) continue;
+                        
+                        var a = copyTable[newPos.X, newPos.Y];
+                        _priorityMap[newPos.X, newPos.Y] = a + (1.0f - a) * Constants.NeighbourToWholeWeight;
                     }
                 }
             }
         }
     }
 
-    public Position? GetMostDesireableStep()
+    public Position? GetMostDesirableStep()
     {
         Position? best = null;
-        float bestPrio = -1.0f;
+        var bestPriority = -1.0f;
 
         foreach (var move in Constants.PossibleMoves)
         {
             var newPos = _playerPosition + move;
-            if (CanMoveThere(newPos))
-            {
-                if (bestPrio < _priorityMap[newPos.X, newPos.Y])
-                {
-                    best = newPos;
-                    bestPrio = _priorityMap[newPos.X, newPos.Y];
-                }
-            }
+            
+            if (!CanMoveThere(newPos)) continue;
+
+            if (!(bestPriority < _priorityMap[newPos.X, newPos.Y])) continue;
+            
+            best = newPos;
+            bestPriority = _priorityMap[newPos.X, newPos.Y];
         }
 
         return best;
@@ -233,19 +230,19 @@ class Table
 
     public bool IsStuck()
     {
-        return !(_stepMap.Cast<int>().Max() == 0);
+        return _stepMap.Cast<int>().Max() != 0;
     }
 }
 
-public class Program
+public static class Program
 {
     private static void UpdateConsole(Table table)
     {
         Console.Clear();
         
-        for (int x = 0; x < table.TableSize.X; x++)
+        for (var x = 0; x < table.TableSize.X; x++)
         {
-            for (int y = 0; y < table.TableSize.Y; y++)
+            for (var y = 0; y < table.TableSize.Y; y++)
             {
                 Console.SetCursorPosition(x * 2, y);
                 
@@ -269,7 +266,7 @@ public class Program
     
     public static int Main(string[] args)
     {
-        Table table = new Table(new Position(8, 8), new Position(1, 1));
+        var table = new Table(new Position(8, 8), new Position(3, 3));
 
         do
         {
@@ -280,17 +277,14 @@ public class Program
 
             Console.ReadLine();
 
-            var next = table.GetMostDesireableStep();
+            var next = table.GetMostDesirableStep();
             if (next != null)
             {
                 table.PlayerPosition = next;
             }
             else
             {
-                if (table.IsStuck())
-                    Console.WriteLine("Stuck!");
-                else
-                    Console.WriteLine("Done!");
+                Console.WriteLine(table.IsStuck() ? "Stuck!" : "Done!");
 
                 Console.ReadLine();
                 return 0;
