@@ -322,7 +322,7 @@ public static class Program
     }
 
     private static Position _tableSize = new(8, 8);
-    private static Position _playerStart = new(3, 3);
+    private static Position _playerStart = new(4, 3);
         
     private static Table _table = new(_tableSize, _playerStart);
     private static Position _lastStep = new(0,0);
